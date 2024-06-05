@@ -1,0 +1,46 @@
+SELECT
+    CONVERT(CHAR(100), SERVERPROPERTY('Servername')) AS Server,
+    d.name AS DatabaseName,
+	d.state_desc AS Status,
+  DATEDIFF(d,MAX(CASE WHEN bu.TYPE = 'D' THEN bu.LastBackupDate END),GETDATE()) AS Days_since_last_fullBackup,
+    DATEDIFF(d,MAX(CASE WHEN bu.TYPE = 'I' THEN bu.LastBackupDate END),GETDATE()) AS Days_since_last_diffBackup,
+    DATEDIFF(d,MAX(CASE WHEN bu.TYPE = 'L' THEN bu.LastBackupDate END),GETDATE()) AS Days_since_last_LogBackup,
+    CASE d.recovery_model
+        WHEN 1 THEN 'Full'
+        WHEN 2 THEN 'Bulk Logged'
+        WHEN 3 THEN 'Simple'
+    END AS RecoveryModel
+FROM sys.databases d 
+LEFT JOIN (
+    SELECT database_name, TYPE, backup_start_date AS LastBackupDate,
+        physical_device_name AS LastBackupFileLocation,
+        ROW_NUMBER() OVER (PARTITION BY database_name, TYPE ORDER BY backup_start_date DESC) AS BackupRank
+    FROM msdb.dbo.backupset bs
+    JOIN msdb.dbo.backupmediafamily bmf ON bs.media_set_id = bmf.media_set_id 
+) AS bu ON d.name = bu.database_name AND bu.BackupRank = 1 
+GROUP BY d.name, d.database_id, d.state_desc, d.recovery_model; 
+
+=========================
+
+select percent_complete from sys.dm_exec_requests where percent_complete>0
+
+========================
+
+ALTER DATABASE Database_Name   
+MODIFY FILE ( NAME = Logical_file_name,
+FILENAME = 'E:\New_location\file_name.mdf');
+GO
+
+ALTER DATABASE Database_Name
+MODIFY FILE ( NAME = Logical_file_name,
+FILENAME = 'E:\New_location\file_name.ldf'); 
+GO
+===============================
+
+$cs = New-PSSession -ComputerName gotsvw3161.got.volvocars.net -Credential (Get-Credential)
+Copy-Item 'E:\RITM2742225\Prod_NEVIS.bak' -Destination "E:\restore\" -ToSession $cs
+
+=====================
+
+ALTER DATABASE <DB NAME> SET ALLOW_SNAPSHOT_ISOLATION ON;
+ALTER DATABASE <DB NAME> SET READ_COMMITTED_SNAPSHOT ON;
