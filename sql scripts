@@ -38,7 +38,7 @@ GO
 ===============================
 
 $cs = New-PSSession -ComputerName gotsvw3161.got.volvocars.net -Credential (Get-Credential)
-Copy-Item 'E:\RITM2742225\Prod_NEVIS.bak' -Destination "E:\restore\" -ToSession $cs
+Copy-Item 'E:\test\test.bak' -Destination "E:\restore\" -ToSession $cs
 
 =====================
 
