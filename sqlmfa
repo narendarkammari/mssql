@@ -1,0 +1,103 @@
+Purpose
+
+The document aims to illustrate the implementation procedure of Multi-factor authentication for MSSQL databases running on Windows servers.
+Implementation prerequisites:
+
+ID should be exists in Microsoft Enta ID and configured for MFA.
+
+Onprem servers should be onboarded to Azure Arc
+
+SQL Server Management Studio (SSMS) version 18.0 or higher is installed on the client machine. 
+
+Limitations:
+
+MFA is supported only by SQL Server 2022
+
+As of now we are able to enable MFA for only single SQL Instance that is hosted on Azure VM,we will be checking with MS for implemting MFA for multiple SQL Inatnces hosted on Azure VM.
+
+
+Implementation procedure
+
+We have different implemetation methods for SQL Server hosted on Azure Vm and SQL Server hosted on Onprem.
+
+Implemenation Procedure for SQL Server hosted on On-prem
+
+1.On board the server to Azure Arc
+
+2.Once server is onboarded,we need to wait for 30-60 minutes,so that azure will auto discover all the SQL Instances hosted on that particular server.
+
+3.Create a app in microsoft entra for SQL Server
+
+ a.Need to create an app registration
+
+ b.This particular app id should have enough previliges in Microsoft Entra for querying the users(read user all,group user all,application read all)
+
+4.Need to create an self signed certificate that will be used by SQL Server for microsoft Entra authentication.
+
+5.Place the certificate in Azure Key vault and theserver -Azure Arc instance have previlige to read the certificate.
+
+6.Once all the above steps are completed,need to navigate to azure arc in azure portal and under that all SQL Instances will be discovered.
+
+7.Need to select the SQL instance for which we need to enable MFA and select Microsoft Entra ID and Purview under Settings in the resource menu.
+
+
+Implemenation Procedure for SQL Server hosted on Azure VM:
+
+1.Azure will discover the SQL instances hosted on Azure VM and SQL Iaas extension agent will be installed on server.
+
+2.For enabling the MFA for SQL Instance hosted on Azure VM,we need to use either the system assigned managed identity of server or User assigned Managed Identity.
+
+3.We can use single user assigned managed identity for enabling MFA on multiple servers.
+
+4.Managed identity(system or user) should be provided with below roles and API permissions.
+
+-- Role -Directory Readers,Microsoft Graph API permisison --User.Read.All,GroupMember.Read.All,Application.Read.All
+
+5.Navigate to your SQL virtual machines resource in the Azure portal.Select Security Configuration under Security.
+
+6.Choose Enable under Microsoft Entra authentication.Choose the managed identity type from the drop-down, either System-assigned or User-assigned. If you choose user-assigned, then select the identity you want to use to authenticate to SQL Server on your Azure VM from the User-assigned managed identity drop-down that appears.
+
+============
+
+Navigate to your SQL virtual machines resource in the Azure portal.
+Select Security Configuration under Security and enable Microsoft Entra authentication.
+we need to choose the managed identity type,either System-assigned or User-assigned.
+
+============
+
+MFA Authentication for SQL SERVER
+
+Prerequietsics
+
+It is possible for SQL SERVER 2022
+
+MFA for SQL Server hosted on Azure VM
+
+VMs with a default instance, or a single named instance.
+If the VM has multiple named instances, then one of the instances must be
+
+1.By default SQL instances in Azure VM are discovered in Azure
+
+2.We will use Azure VM managed Identity for SQL Server to autnticate with Microsoft Entra ID
+
+3.We can use user assigned managed idetity as well
+
+4.Need to get appripriate permissions for that identity to read users in Microsoft Entra ID(read user all,group user all,application read all)
+
+5.To enable MFA,follow below steps
+
+->Search the VM on which SQL Server is Running
+
+->Under setting,
+
+
+
+MFA for SQL Server hosted on On prem Server
+
+1.Onboard the server to Azure Arc
+
+Requirements
+
+1.Need to create a key valut
+
+2.Need to a register an application in the same tenant.
