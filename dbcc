@@ -1,0 +1,29 @@
+dbcc dropcleanbuffers
+
+DBCC INPUTBUFFER – a useful command that displays the text of the last executed SQL command in a specific session. (The syntax is DBCC INPUTBUFFER (session_number))
+DBCC OPENTRAN – displays information about recently opened transactions.
+DBCC SHOW_STATISTICS – displays a list of statistics for a specific table.
+DBCC SHOWCONTIG –
+
+dbcc freesystemcache
+
+==========
+
+dbcc freesystemcache('ALL')
+dbcc freesessioncache
+dbcc freeproccache
+dbcc dropcleanbuffers
+
+dbcc tracestatus()
+
+dbcc traceon(flag,-1)
+
+dbcc traceoff(flag,-1)
+
+dbcc updateusage(dbnmae/tbnae)
+
+dbcc opentran
+
+dbcc sqlperf(logspace)
+
+dbcc checkdb(dbname,Repair_allow_data_loss)
