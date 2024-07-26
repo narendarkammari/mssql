@@ -1,0 +1,107 @@
+-- Script to monitor memory usage in SQL Server
+
+-- Buffer Pool Usage
+SELECT 
+    cntr_value / 1024 AS BufferCache_MB
+FROM 
+    sys.dm_os_performance_counters
+WHERE 
+    object_name = 'SQLServer:Buffer Manager'
+    AND counter_name = 'Database Pages';
+
+-- Plan Cache Usage
+SELECT 
+    SUM(single_pages_kb + multi_pages_kb) / 1024 AS PlanCache_MB
+FROM 
+    sys.dm_os_memory_cache_counters
+WHERE 
+    type = 'CACHESTORE_SQLCP';
+
+-- Memory Grants Pending
+SELECT 
+    cntr_value AS MemoryGrantsPending
+FROM 
+    sys.dm_os_performance_counters
+WHERE 
+    object_name = 'SQLServer:Memory Manager'
+    AND counter_name = 'Memory Grants Pending';
+
+-- Memory Clerk Usage
+SELECT 
+    type AS MemoryClerkType,
+    pages_kb / 1024 AS MemoryUsed_MB
+FROM 
+    sys.dm_os_memory_clerks
+ORDER BY 
+    pages_kb DESC;
+
+-- Overall Memory Usage
+SELECT 
+    physical_memory_in_use_kb / 1024 AS PhysicalMemoryInUse_MB,
+    locked_page_allocations_kb / 1024 AS LockedPageAllocations_MB,
+    total_virtual_address_space_kb / 1024 AS TotalVirtualAddressSpace_MB,
+    virtual_address_space_reserved_kb / 1024 AS VirtualAddressSpaceReserved_MB,
+    virtual_address_space_committed_kb / 1024 AS VirtualAddressSpaceCommitted_MB,
+    virtual_address_space_available_kb / 1024 AS VirtualAddressSpaceAvailable_MB,
+    page_fault_count AS PageFaultCount,
+    memory_utilization_percentage AS MemoryUtilizationPercentage
+FROM 
+    sys.dm_os_process_memory;
+
+-- Buffer Pool Usage by Database
+SELECT 
+    DB_NAME(database_id) AS DatabaseName,
+    COUNT(*) * 8 / 1024 AS BufferPoolUsage_MB
+FROM 
+    sys.dm_os_buffer_descriptors
+GROUP BY 
+    DB_NAME(database_id)
+ORDER BY 
+    BufferPoolUsage_MB DESC;
+
+-- Cached Objects in Plan Cache
+SELECT 
+    objtype AS ObjectType,
+    COUNT(*) AS CachedObjectCount,
+    SUM(size_in_bytes) / 1024 / 1024 AS CachedObjectSize_MB
+FROM 
+    sys.dm_exec_cached_plans
+GROUP BY 
+    objtype
+ORDER BY 
+    CachedObjectSize_MB DESC;
+
+-- Memory Usage by Query
+SELECT 
+    SUBSTRING(text, (qs.statement_start_offset / 2) + 1, 
+        ((CASE statement_end_offset
+          WHEN -1 THEN DATALENGTH(text)
+          ELSE qs.statement_end_offset END 
+          - qs.statement_start_offset) / 2) + 1) AS QueryText,
+    qs.total_worker_time / 1000 AS TotalCPUTime_ms,
+    qs.total_elapsed_time / 1000 AS TotalElapsedTime_ms,
+    qs.total_logical_reads AS TotalLogicalReads,
+    qs.total_logical_writes AS TotalLogicalWrites,
+    qs.total_physical_reads AS TotalPhysicalReads,
+    qs.max_worker_time / 1000 AS MaxCPUTime_ms,
+    qs.max_elapsed_time / 1000 AS MaxElapsedTime_ms,
+    qs.creation_time AS CreationTime,
+    qs.execution_count AS ExecutionCount,
+    qs.total_rows AS TotalRows
+FROM 
+    sys.dm_exec_query_stats AS qs
+CROSS APPLY 
+    sys.dm_exec_sql_text(qs.sql_handle)
+ORDER BY 
+    qs.total_worker_time DESC;
+
+-- Memory Clerk Usage Summary
+SELECT 
+    type,
+    SUM(pages_kb) / 1024 AS TotalMemoryUsed_MB
+FROM 
+    sys.dm_os_memory_clerks
+GROUP BY 
+    type
+ORDER BY 
+    TotalMemoryUsed_MB DESC;
