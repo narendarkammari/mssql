@@ -1,0 +1,57 @@
+Purchasingmodels
+
+
+Vcore
+General purpose
+business criticality
+Hyperscale
+Hyperscale is currently available only for single databases in Azure SQL Database.
+
+--
+Serverless compute --Per secondary(
+Provisioned compute
+
+DTU
+
+basic
+standard
+premium
+
+===
+
+show databases
+
+describe tablename
+
+show table status
+
+repair table
+
+check table
+
+analyze table
+
+mysqldump(for backup) logical backup
+
+mysqldump(for restore) or restore database
+
+binarylog(log file)
+
+MySQL Enterprise Backup
+
+-----
+
+backup progress
+
+show processlist
+
+information_schema.processlist table
+
+
+=====
+
+Azure data studio
+
+Database migration assistant
+
+Or through bacpac
